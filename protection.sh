@@ -58,10 +58,6 @@ function allowed_cpu_load(){
     maxCPUload=$(( $normalCPUload*2 ));
 }
 
-function normal_cpu_load(){
-    normalCPUload=6;
-}
-
 function disable(){
     curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${CF_CONE_ID}/settings/security_level" \
      -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
