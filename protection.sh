@@ -55,7 +55,11 @@ ddos=${load%.*}
 
 function allowed_cpu_load(){
     normalCPUload=$(grep -c ^processor /proc/cpuinfo);
-    maxCPUload=$(( $normalCPUload*2 ));
+    avarage=$(($normalCPUload/2))
+    if [ $avarage -eq 0 ]; then
+        avarage=1;
+    fi
+    maxCPUload=$(( $normalCPUload+$avarage ));
 }
 
 function disable(){
