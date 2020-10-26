@@ -1,6 +1,6 @@
 ---
 name: 🐛 Bug report
-about: Create a report to help us improve LaraSail 🤘
+about: Create a report to help us improve the script 🤘
 title: "Bug: "
 labels: bug
 ---
