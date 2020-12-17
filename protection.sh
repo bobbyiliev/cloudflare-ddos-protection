@@ -5,10 +5,10 @@
 ###
 
 ##
-# Cloud Flare API Config
+# CloudFlare API Config
 ##
 
-CF_CONE_ID=YOUR_CF_ZONE_ID
+CF_ZONE_ID=YOUR_CF_ZONE_ID
 CF_EMAIL_ADDRESS=YOUR_CF_EMAIL_ADDRESS
 CF_API_KEY=YOUR_CF_API_KEY
 
@@ -32,7 +32,7 @@ current_status=$(mktemp /tmp/temp-status.XXXXXX)
 status=$(mktemp /tmp/temp-status.XXXXXX)
 
 function status() {
-    curl -X GET "https://api.cloudflare.com/client/v4/zones/${CF_CONE_ID}/settings/security_level" \
+    curl -X GET "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/settings/security_level" \
         -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
         -H "X-Auth-Key: ${CF_API_KEY}" \
         -H "Content-Type: application/json" 2>/dev/null > ${current_status}
@@ -42,7 +42,7 @@ function status() {
 }
 
 ##
-# Monitring your CPU load:
+# Monitoring your CPU load:
 ##
 
 load=$(uptime | awk -F'average:' '{ print $2 }' | awk '{print $1}' | sed 's/,/ /')
@@ -55,15 +55,15 @@ ddos=${load%.*}
 
 function allowed_cpu_load(){
     normalCPUload=$(grep -c ^processor /proc/cpuinfo);
-    avarage=$(($normalCPUload/2))
-    if [ $avarage -eq 0 ]; then
-        avarage=1;
+    average=$(($normalCPUload/2))
+    if [[ $average -eq 0 ]]; then
+        average=1;
     fi
-    maxCPUload=$(( $normalCPUload+$avarage ));
+    maxCPUload=$(( $normalCPUload+$average ));
 }
 
 function disable(){
-    curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${CF_CONE_ID}/settings/security_level" \
+    curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/settings/security_level" \
      -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
      -H "X-Auth-Key: ${CF_API_KEY}" \
      -H "Content-Type: application/json" \
@@ -71,7 +71,7 @@ function disable(){
 }
 
 function under_attack(){
-    curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${CF_CONE_ID}/settings/security_level" \
+    curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/settings/security_level" \
      -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
      -H "X-Auth-Key: ${CF_API_KEY}" \
      -H "Content-Type: application/json" \
@@ -83,31 +83,31 @@ function under_attack(){
 ##
 
 function ddos_check(){
-    if [ $ddos -gt $maxCPUload ]
+    if [[ $ddos -gt $maxCPUload ]]
     then
-        if [ $currentStatus == "medium" ]
+        if [[ $currentStatus == "medium" ]]
         then
         # Enable the CloudFlare DDOS protection
         under_attack
 
         echo "$(date) - Enabled DDoS" >> ~/.cloudflare/ddos.log 
-            if [ $notifications == 1 ] ; then
+            if [[ $notifications == 1 ]] ; then
                 echo "$(date) - Enabled DDoS"  | mail -s "Enabled DDoS" ${CF_EMAIL_ADDRESS}
             fi
         else
         exit 0
         fi
-    elif [ $ddos -lt $normalCPUload ]
+    elif [[ $ddos -lt $normalCPUload ]]
     then
         # If the CPU load is less than the normal CPU load for your server,
         # then the DDoS protection would be disabled if the current status is under attack
-        if [ $currentStatus == "under_attack" ]
+        if [[ $currentStatus == "under_attack" ]]
         then
             # Disable the CloudFlare DDOS protection
             disable
 
             echo "$(date) - Disabled DDoS" >> ~/.cloudflare/ddos.log 
-            if [ $notifications == 1 ] ; then
+            if [[ $notifications == 1 ]] ; then
                 echo "$(date) - Disabled DDoS"  | mail -s "Enabled DDoS" bobby@bobbyiliev.com
             fi
         else
