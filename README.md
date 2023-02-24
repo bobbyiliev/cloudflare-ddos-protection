@@ -34,6 +34,8 @@ Make the script executable:
 chmod +x ~/protection.sh
 ```
 
+Update the Cloudflare API key and Zone ID in the script.
+
 Setup 2 Cron jobs to run every 30 seconds. To edit your crontab run:
 
 ```
@@ -46,3 +48,5 @@ And add the following content:
 * * * * * /path-to-the-script/cloudflare/protection.sh
 * * * * * ( sleep 30 ; /path-to-the-script/cloudflare/protection.sh )
 ```
+
+For more information check out the [Cloudflare API docs](https://developers.cloudflare.com/api/operations/zone-settings-change-security-level-setting).
