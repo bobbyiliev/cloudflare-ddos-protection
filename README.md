@@ -1,52 +1,156 @@
-# Cloudflare DDoS Protection Script
+# CloudFlare DDoS Protection Script
 
-Cloudflare offers free DDoS protection and they have a cool API that you could use to enable and disable their DDoS protection easily.
+A bash script that automatically manages CloudFlare's DDoS protection based on your server's CPU load. The script monitors system resources and dynamically adjusts CloudFlare's security level through their API.
 
-You can use this CLI script to enable and disable the CloudFlare DDOS protection for your website automatically based on the CPU load of your server.
+## Features
+
+- Automatic DDoS protection based on CPU load
+- Secure configuration handling
+- Logging
+- Email notifications
+- Temporary file management
+- Automatic cleanup
 
 ## Prerequisites
 
-* A Cloudflare account
-* Cloudflare API key
-* Cloudflare Zone ID
-* Make sure curl is installed on your server: `curl --version`
+### Required Software
 
-If curl is not installed you need to run the following:
+- curl (for API requests)
+- jq (for JSON parsing)
+- mailutils/mailx (for notifications)
 
-For RedHat/CentOs:
+### Installation on Debian/Ubuntu
 
-```
-yum install curl
-```
-For Debian/Ubuntu
-
-```
-apt-get install curl
+```bash
+sudo apt-get update
+sudo apt-get install -y curl jq mailutils
 ```
 
-## Setup
+### Installation on RedHat/CentOS/Rocky Linux
 
-All you need to do is to download the script and save it on your server.
-
-Make the script executable:
-
-```
-chmod +x ~/protection.sh
+```bash
+sudo yum install -y curl jq mailx
 ```
 
-Update the Cloudflare API key and Zone ID in the script.
+### CloudFlare Requirements
 
-Setup 2 Cron jobs to run every 30 seconds. To edit your crontab run:
+- CloudFlare account
+- CloudFlare API key
+- CloudFlare Zone ID
 
+## Installation
+
+1. Clone or download the script:
+
+```bash
+curl -o protection.sh https://raw.githubusercontent.com/bobbyiliev/cloudflare-ddos/main/protection.sh
 ```
+
+2. Make the script executable:
+```bash
+chmod +x protection.sh
+```
+
+## Configuration
+
+### Method 1: Environment Variables
+
+Set your CloudFlare credentials as environment variables:
+```bash
+export CF_ZONE_ID="your_zone_id"
+export CF_EMAIL_ADDRESS="your_email"
+export CF_API_KEY="your_api_key"
+```
+
+### Method 2: Direct Script Configuration
+
+Edit the script and update the following variables:
+```bash
+CF_ZONE_ID="your_zone_id"
+CF_EMAIL_ADDRESS="your_email"
+CF_API_KEY="your_api_key"
+```
+
+### Optional Settings
+
+- `NOTIFICATIONS_ENABLED`: Set to 1 to enable email notifications (default: 1)
+- You can modify the CPU load thresholds by adjusting the calculation in the `get_allowed_cpu_load` function
+
+## Usage
+
+### Manual Execution
+
+Run the script directly:
+
+```bash
+./protection.sh
+```
+
+### Automated Execution (Recommended)
+
+Set up a cron job to run the script every 30 seconds:
+
+1. Open your crontab:
+
+```bash
 crontab -e
 ```
 
-And add the following content:
+2. Add the following lines:
+
+```bash
+* * * * * /full/path/to/protection.sh
+* * * * * ( sleep 30 ; /full/path/to/protection.sh )
+```
+
+## Logging
+
+The script logs all activities to `~/.cloudflare/ddos.log`. Each log entry includes:
+- Timestamp
+- Action taken (enabled/disabled DDoS protection)
+- Current CPU load
+- Any errors encountered
+
+Example log entry:
 
 ```
-* * * * * /path-to-the-script/cloudflare/protection.sh
-* * * * * ( sleep 30 ; /path-to-the-script/cloudflare/protection.sh )
+2024-11-19 14:30:00 - Enabled DDoS protection (Load: 8)
 ```
 
-For more information check out the [Cloudflare API docs](https://developers.cloudflare.com/api/operations/zone-settings-change-security-level-setting).
+## Email Notifications
+
+When `NOTIFICATIONS_ENABLED` is set to 1, you'll receive email notifications for:
+- DDoS protection enabled/disabled
+- Error conditions
+- Configuration issues
+
+Note that the email notifications require a working `mail` command on your system and do not support SMTP authentication. This may require additional configuration for some mail servers as you might not be able to send emails directly from your server.
+
+## Security Considerations
+
+- The configuration directory is created with restricted permissions (700)
+- Temporary files are securely created and automatically cleaned up
+- API credentials are protected from exposure in logs
+- Input validation is performed on all variables
+
+If you encounter any security issues, please report them to [@bobbyiliev_](https://x.com/bobbyiliev_).
+
+## Troubleshooting
+
+Add `set -x` at the beginning of the script for verbose output:
+
+```bash
+#!/bin/bash
+set -x
+# rest of the script...
+```
+
+## CloudFlare API Reference
+
+For more information about the CloudFlare API endpoints used in this script, visit:
+- [CloudFlare API Documentation](https://developers.cloudflare.com/api)
+- [Security Level Settings](https://developers.cloudflare.com/api/operations/zone-settings-change-security-level-setting)
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!
