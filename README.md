@@ -147,6 +147,21 @@ set -x
 # rest of the script...
 ```
 
+## Manual Testing
+
+You can test the script manually by setting the `TEST_MODE` and `SIMULATED_LOAD` environment variables:
+
+```bash
+# Test under normal load
+TEST_MODE=1 SIMULATED_LOAD=5 ./protection.sh
+
+# Test high load (should trigger protection)
+TEST_MODE=1 SIMULATED_LOAD=30 ./protection.sh
+
+# Test returning to normal
+TEST_MODE=1 SIMULATED_LOAD=5 ./protection.sh
+```
+
 ## CloudFlare API Reference
 
 For more information about the CloudFlare API endpoints used in this script, visit:

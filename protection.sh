@@ -81,8 +81,16 @@ get_security_status() {
 }
 
 # Get system CPU load
-# Get system CPU load
 get_cpu_load() {
+    # Test mode - simulated load
+    if [ "${TEST_MODE:-0}" = "1" ]; then
+        local simulated_load="${SIMULATED_LOAD:-0}"
+        echo "Debug - Simulated load: ${simulated_load}" >&2
+        echo "${simulated_load}"
+        return
+    fi
+
+    # Normal mode
     local load
     load=$(uptime | awk -F'load average:' '{ print $2 }' | awk '{print $1}' | sed 's/,//' | xargs printf "%.0f")
     echo "Debug - Raw load: ${load}" >&2
@@ -126,7 +134,7 @@ check_ddos_status() {
     echo "Normal load: ${normal_load}"
     echo "Current status: ${current_status}"
 
-    if [ "${current_load}" -gt "${max_load}" ] && [ "${current_status}" = "medium" ]; then
+    if [ "${current_load}" -gt "${max_load}" ] && [ "${current_status}" != "under_attack" ]; then
         update_security_level "under_attack"
         log "Enabled DDoS protection (Load: ${current_load})"
     elif [ "${current_load}" -lt "${normal_load}" ] && [ "${current_status}" = "under_attack" ]; then
