@@ -34,9 +34,23 @@ error_exit() {
 }
 
 # Validate configuration
+# Validate configuration
 validate_config() {
-    [[ -z "$CF_ZONE_ID" || "$CF_ZONE_ID" == "YOUR_CF_ZONE_ID" ]] && error_exit "CF_ZONE_ID not configured"
-    [[ -z "$CF_API_TOKEN" || "$CF_API_TOKEN" == "YOUR_CF_API_TOKEN" ]] && error_exit "CF_API_TOKEN not configured"
+    if [ -z "${CF_ZONE_ID}" ]; then
+        error_exit "CF_ZONE_ID is empty"
+    fi
+
+    if [ -z "${CF_API_TOKEN}" ]; then
+        error_exit "CF_API_TOKEN is empty"
+    fi
+
+    if [ "${CF_ZONE_ID}" = "YOUR_CF_ZONE_ID" ]; then
+        error_exit "CF_ZONE_ID has default value"
+    fi
+
+    if [ "${CF_API_TOKEN}" = "YOUR_CF_API_TOKEN" ]; then
+        error_exit "CF_API_TOKEN has default value"
+    fi
 }
 
 # Initialize CloudFlare directory
@@ -50,25 +64,41 @@ init_cloudflare_dir() {
 
 # Get current CloudFlare security status
 get_security_status() {
-    local temp_status=$(mktemp "${TEMP_DIR}/cf-status.XXXXXX")
-    local temp_result=$(mktemp "${TEMP_DIR}/cf-result.XXXXXX")
+    local temp_status
+    local temp_result
+    local response
 
-    trap 'rm -f "$temp_status" "$temp_result"' EXIT
+    temp_status=$(mktemp "${TEMP_DIR}/cf-status.XXXXXX")
+    temp_result=$(mktemp "${TEMP_DIR}/cf-result.XXXXXX")
 
-    if ! curl -sS -X GET "$API_ENDPOINT" \
+    # Ensure cleanup
+    trap 'rm -f "${temp_status}" "${temp_result}"' EXIT
+
+    response=$(curl -sS -X GET "$API_ENDPOINT" \
         -H "Authorization: Bearer ${CF_API_TOKEN}" \
-        -H "Content-Type: application/json" >"$temp_status"; then
-        error_exit "Failed to fetch CloudFlare status"
+        -H "Content-Type: application/json")
+
+    echo "${response}" >"${temp_status}"
+
+    if ! echo "${response}" | jq -r '.result.value' >"${temp_result}"; then
+        error_exit "Failed to parse CloudFlare response"
     fi
 
-    jq -r '.result.value' <"$temp_status" >"$temp_result" 2>/dev/null || error_exit "Failed to parse CloudFlare response"
-    cat "$temp_result"
+    local status
+    status=$(cat "${temp_result}")
+
+    # Clean up
+    rm -f "${temp_status}" "${temp_result}"
+
+    echo "${status}"
 }
 
+# Get system CPU load
 # Get system CPU load
 get_cpu_load() {
     local load
     load=$(uptime | awk -F'average:' '{ print $2 }' | awk '{print $1}' | sed 's/,/ /')
+    echo "Debug - Raw load: ${load}" >&2
     echo "${load%.*}"
 }
 
@@ -78,6 +108,7 @@ get_allowed_cpu_load() {
     cpu_count=$(nproc)
     local average=$((cpu_count / 2))
     [ "$average" -eq 0 ] && average=1
+    echo "Debug - CPU count: ${cpu_count}, Average: ${average}" >&2
     echo "$((cpu_count + average))"
 }
 
@@ -96,17 +127,24 @@ update_security_level() {
 check_ddos_status() {
     local current_load=$1
     local max_load=$2
-    local normal_load=$(nproc)
-    local current_status
+    local normal_load
+    normal_load=$(nproc)
 
+    local current_status
     current_status=$(get_security_status)
 
-    if [ "$current_load" -gt "$max_load" ] && [ "$current_status" = "medium" ]; then
+    # Add debug output
+    echo "Current load: ${current_load}"
+    echo "Max load: ${max_load}"
+    echo "Normal load: ${normal_load}"
+    echo "Current status: ${current_status}"
+
+    if [ "${current_load}" -gt "${max_load}" ] && [ "${current_status}" = "medium" ]; then
         update_security_level "under_attack"
-        log "Enabled DDoS protection (Load: $current_load)"
-    elif [ "$current_load" -lt "$normal_load" ] && [ "$current_status" = "under_attack" ]; then
+        log "Enabled DDoS protection (Load: ${current_load})"
+    elif [ "${current_load}" -lt "${normal_load}" ] && [ "${current_status}" = "under_attack" ]; then
         update_security_level "medium"
-        log "Disabled DDoS protection (Load: $current_load)"
+        log "Disabled DDoS protection (Load: ${current_load})"
     fi
 }
 
