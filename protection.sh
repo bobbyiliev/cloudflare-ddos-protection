@@ -64,31 +64,18 @@ init_cloudflare_dir() {
 
 # Get current CloudFlare security status
 get_security_status() {
-    local temp_status
-    local temp_result
     local response
-
-    temp_status=$(mktemp "${TEMP_DIR}/cf-status.XXXXXX")
-    temp_result=$(mktemp "${TEMP_DIR}/cf-result.XXXXXX")
-
-    # Ensure cleanup
-    trap 'rm -f "${temp_status}" "${temp_result}"' EXIT
+    local status
 
     response=$(curl -sS -X GET "$API_ENDPOINT" \
         -H "Authorization: Bearer ${CF_API_TOKEN}" \
         -H "Content-Type: application/json")
 
-    echo "${response}" >"${temp_status}"
+    status=$(echo "${response}" | jq -r '.result.value')
 
-    if ! echo "${response}" | jq -r '.result.value' >"${temp_result}"; then
-        error_exit "Failed to parse CloudFlare response"
+    if [ -z "${status}" ]; then
+        error_exit "Failed to get status from CloudFlare"
     fi
-
-    local status
-    status=$(cat "${temp_result}")
-
-    # Clean up
-    rm -f "${temp_status}" "${temp_result}"
 
     echo "${status}"
 }
@@ -97,9 +84,9 @@ get_security_status() {
 # Get system CPU load
 get_cpu_load() {
     local load
-    load=$(uptime | awk -F'average:' '{ print $2 }' | awk '{print $1}' | sed 's/,/ /')
+    load=$(uptime | awk -F'load average:' '{ print $2 }' | awk '{print $1}' | sed 's/,//' | xargs printf "%.0f")
     echo "Debug - Raw load: ${load}" >&2
-    echo "${load%.*}"
+    echo "${load}"
 }
 
 # Calculate allowed CPU load
