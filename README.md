@@ -43,7 +43,7 @@ sudo yum install -y curl jq mailx
 1. Clone or download the script:
 
 ```bash
-curl -o protection.sh https://raw.githubusercontent.com/bobbyiliev/cloudflare-ddos/main/protection.sh
+curl -o protection.sh https://raw.githubusercontent.com/bobbyiliev/cloudflare-ddos-protection/main/protection.sh
 ```
 
 2. Make the script executable:
