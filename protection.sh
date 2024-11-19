@@ -13,8 +13,8 @@ readonly TEMP_DIR="/tmp"
 
 # CloudFlare API Configuration
 CF_ZONE_ID=${CF_ZONE_ID:-"YOUR_CF_ZONE_ID"}
+CF_API_TOKEN=${CF_API_TOKEN:-"YOUR_CF_API_TOKEN"}
 CF_EMAIL_ADDRESS=${CF_EMAIL_ADDRESS:-"YOUR_CF_EMAIL_ADDRESS"}
-CF_API_KEY=${CF_API_KEY:-"YOUR_CF_API_KEY"}
 
 # Settings
 readonly NOTIFICATIONS_ENABLED=${notifications:-1}
@@ -36,8 +36,7 @@ error_exit() {
 # Validate configuration
 validate_config() {
     [[ -z "$CF_ZONE_ID" || "$CF_ZONE_ID" == "YOUR_CF_ZONE_ID" ]] && error_exit "CF_ZONE_ID not configured"
-    [[ -z "$CF_EMAIL_ADDRESS" || "$CF_EMAIL_ADDRESS" == "YOUR_CF_EMAIL_ADDRESS" ]] && error_exit "CF_EMAIL_ADDRESS not configured"
-    [[ -z "$CF_API_KEY" || "$CF_API_KEY" == "YOUR_CF_API_KEY" ]] && error_exit "CF_API_KEY not configured"
+    [[ -z "$CF_API_TOKEN" || "$CF_API_TOKEN" == "YOUR_CF_API_TOKEN" ]] && error_exit "CF_API_TOKEN not configured"
 }
 
 # Initialize CloudFlare directory
@@ -57,8 +56,7 @@ get_security_status() {
     trap 'rm -f "$temp_status" "$temp_result"' EXIT
 
     if ! curl -sS -X GET "$API_ENDPOINT" \
-        -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
-        -H "X-Auth-Key: ${CF_API_KEY}" \
+        -H "Authorization: Bearer ${CF_API_TOKEN}" \
         -H "Content-Type: application/json" >"$temp_status"; then
         error_exit "Failed to fetch CloudFlare status"
     fi
@@ -87,8 +85,7 @@ get_allowed_cpu_load() {
 update_security_level() {
     local level="$1"
     if ! curl -sS -X PATCH "$API_ENDPOINT" \
-        -H "X-Auth-Email: ${CF_EMAIL_ADDRESS}" \
-        -H "X-Auth-Key: ${CF_API_KEY}" \
+        -H "Authorization: Bearer ${CF_API_TOKEN}" \
         -H "Content-Type: application/json" \
         --data "{\"value\":\"$level\"}"; then
         error_exit "Failed to update security level to $level"

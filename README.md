@@ -35,7 +35,9 @@ sudo yum install -y curl jq mailx
 ### CloudFlare Requirements
 
 - CloudFlare account
-- CloudFlare API key
+- CloudFlare API token with the following permissions:
+  - Zone - Zone Settings - Read
+  - Zone - Zone Settings - Edit
 - CloudFlare Zone ID
 
 ## Installation
@@ -59,7 +61,7 @@ Set your CloudFlare credentials as environment variables:
 ```bash
 export CF_ZONE_ID="your_zone_id"
 export CF_EMAIL_ADDRESS="your_email"
-export CF_API_KEY="your_api_key"
+export CF_API_TOKEN="your_api_token"
 ```
 
 ### Method 2: Direct Script Configuration
@@ -68,7 +70,7 @@ Edit the script and update the following variables:
 ```bash
 CF_ZONE_ID="your_zone_id"
 CF_EMAIL_ADDRESS="your_email"
-CF_API_KEY="your_api_key"
+CF_API_TOKEN="your_api_token"
 ```
 
 ### Optional Settings
